@@ -1,0 +1,7 @@
+{
+  "name": "marketing-performance-dashboard",
+  "private": true,
+  "scripts": {
+    "profile": "node --use-system-ca scripts/ghl-profile.mjs"
+  }
+}
