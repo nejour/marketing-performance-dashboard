@@ -163,7 +163,6 @@
       <p class="sub">Each bar is one source, split by the stage its leads are in today (the 8 stages of the Sales Pipeline, in GoHighLevel's order).</p>
       <div class="legend" id="stage-legend"></div>
       <div class="chart-box"><canvas id="c-pipeline" aria-label="Stacked bar chart of pipeline stages by source"></canvas></div>
-      <p class="check" id="check-stages"></p>
     </section>
 
     <section class="card">
@@ -329,11 +328,6 @@ document.addEventListener("DOMContentLoaded", function () {
                   y: { stacked: true, grid: { display: false }, border: { color: css("--axis") }, ticks: { color: css("--ink") } } },
       },
     });
-    const okStages = d.checks.stagesAddUpPerSource && d.checks.sourcesAddUpToTotal;
-    $("check-stages").className = "check" + (okStages ? "" : " fail");
-    $("check-stages").textContent = okStages
-      ? `✅ Check passed: for every source the stages add up to its lead total, and all sources add up to ${T.leads}.`
-      : "⚠️ Check failed: the stage counts don't add up to the lead totals.";
 
     // ---- 3. funnel ----
     const fColors = ["--f1", "--f2", "--f3", "--f4"].map(css);
