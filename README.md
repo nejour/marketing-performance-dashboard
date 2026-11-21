@@ -6,7 +6,21 @@ Live link: https://marketing-performance-dashboard-delta.vercel.app/
 
 When the page opens, it calls a small server function on Vercel (`api/dashboard.mjs`). That function reads the Sales Pipeline from GoHighLevel, cleans the data (`lib/clean.mjs`) and sends back only totals per source. The page then draws the charts with Chart.js.
 
-The GHL key is saved in Vercel's environment variables, so it never reaches the browser. The data refreshes when the page is opened, but the numbers are reused for a few minutes (set by `CACHE_MINUTES`, see Settings) so GHL isn't called on every visit. The page shows when they were last updated. If GHL can't be reached, the owner sees a short message instead of a blank page.
+The GHL key is saved in Vercel's environment variables, so it never reaches the browser. If GHL can't be reached, the owner sees a short message instead of a blank page.
+
+### When the numbers update
+
+The page gets its numbers when it is opened or reloaded. It does not update by itself while it stays open.
+
+GHL is not called on every visit. The numbers are saved for a set time, 15 minutes by default (the `CACHE_MINUTES` setting):
+
+- If the saved numbers are newer than that, they are shown straight away and GHL is not called.
+- If they are older, GHL is called and the page shows fresh numbers.
+- If nobody opens the page, GHL is never called.
+
+The line at the top, "updated … at …", shows when the numbers were last taken from GHL. Example: the owner opens the page at 09:00 and sees "updated at 09:00". Reloading at 09:10 still shows 09:00. Reloading at 09:30 shows 09:30.
+
+I did this to keep the page fast, to avoid sending the shared GHL account the same request over and over, and because the budget decision is made weekly, so numbers a few minutes old are fine.
 
 ## Decisions
 
