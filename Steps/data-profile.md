@@ -1,6 +1,6 @@
 # GHL data profile: Sales Pipeline
 
-Generated 2026-11-21 14:31 UTC by `scripts/ghl-profile.mjs` (read-only). Raw JSON is in `data/raw/` (git-ignored).
+Generated 2026-11-21 15:45 UTC by `scripts/ghl-profile.mjs` (read-only). Raw JSON is in `data/raw/` (git-ignored).
 
 ## 1. Pipelines in this location
 

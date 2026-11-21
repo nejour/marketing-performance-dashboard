@@ -31,7 +31,7 @@ The other 23 pipelines in the location (e.g. "JH-Speed to Lead", "Fitness Coachi
 | 1 | Duplicate contacts (same email or phone) | 0 | No action. The 3 look-alike people (Nadia Attieh, Mona Haddad, Reem Rahme) are copies inside the demo group, already removed by the Step 4 rule | The agency's own records are unique |
 | 2 | Missing source | 0 | Keep an "Unknown source" bar in the code anyway, so the totals still add up if one appears later | Future-proof; the brief says not every problem is listed |
 | 3 | Same source spelled differently | 0 | Mapping table stays in code (e.g. "Website" → "Website Form", "FB" → "Facebook Ad") | Cheap guard for live data |
-| 4 | **Deal value $145,000** | 6 (2 of them won: Facebook Ad, Instagram Ad) | **Keep the lead in volume and pipeline. Leave the value out of revenue** and list it as "suspicious value" | Normal deals are $1,500–$12,000 (median $6,875); $145,000 is 12× the largest normal deal and appears on exactly 6 records. Including it adds $290,000 of revenue to Facebook Ad and Instagram Ad and flips the budget advice |
+| 4 | **Deal value $145,000** | 6 (2 of them won: Facebook Ad, Instagram Ad) | **Keep the lead in volume and pipeline. Leave the value out of revenue** and list it as "suspicious value". Coded rule: any value above 10× the typical (median) agency deal, currently 10 × $7,250 = $72,500 | Normal deals are $1,500–$12,000 (median $6,875); $145,000 is 12× the largest normal deal and appears on exactly 6 records. Including it adds $290,000 of revenue to Facebook Ad and Instagram Ad and flips the budget advice |
 | 5 | **Deal value $0** | 9 (1 won: Webinar) | Keep the lead. Count the won deal as a sale, add $0 revenue, flag it as "won with no value" | A $0 win is a real close with a missing amount; dropping it would understate Webinar's close rate |
 | 6 | Stage "Disqualified" but status "open" | 2 | Trust the **stage**; count them as Disqualified | The stage is what the pipeline chart shows. One source of truth |
 | 7 | Moved back to "Qualified Opt In" in October, after the import | 4 | Keep as-is, mention it in the README | Probably edited by another student. Read-only, so we can't fix it; the effect is small |
@@ -85,7 +85,28 @@ If the $145k values were kept, Instagram Ad would jump to first place ($176,500)
 
 ---
 
+## Step 7: Architecture (how the dashboard is put together)
+
+```
+Owner's browser                Vercel (server side)                     GoHighLevel
+index.html + Chart.js  ──►  /api/dashboard  (holds GHL_API_KEY)  ──►  read-only GET requests
+   draws the charts    ◄──  runs lib/clean.mjs, returns totals   ◄──  pipelines, opportunities, contacts
+```
+
+| Decision | Choice | Why |
+|---|---|---|
+| Where the key lives | Only in Vercel's environment variables, read by `/api/dashboard` | The browser never sees it; an exposed key fails the project |
+| What the browser receives | Only totals per source (counts, %, revenue), no names, emails or phones | Security and privacy in one rule |
+| Refresh | Live: data is pulled from GHL when the page is opened, cached for 15 minutes, page shows "Last updated" | Always current on Monday morning without hammering the API; no extra tools |
+| Why not n8n + database | Not needed | Fewer moving parts for 238 records; one place to debug |
+| Hosting | Vercel, from the private GitHub repo | Same steps as the Level 3 deployment lesson; free; gives a shareable link |
+| Charts | Chart.js, one HTML page, no build step | Simple, works on a phone, matches the brief's chart types |
+| Password | None | The page shows only totals, and the owner must open it with zero explanation |
+| If GHL is down or the key is wrong | Friendly message on the page instead of a blank screen | Hard case in Step 9 |
+
+---
+
 ## Decisions still yours to confirm
 
-1. Rule 4: exclude the $145,000 values from revenue only (recommended), or drop those 6 leads entirely?
+1. ~~Rule 4~~: settled. Keep the 6 leads in volume, pipeline and conversion; leave the $145,000 values out of revenue; list them in the Data quality panel as "suspicious deal value". The leads are real, only the amount is wrong, so removing the leads would understate those sources' volume and conversion.
 2. ~~Where "Lost" sits~~: settled. In the real agency pipeline, "Closed Lost" means the sales process ended and the prospect said no, so Lost comes after the call.

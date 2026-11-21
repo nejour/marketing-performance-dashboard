@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marketing performance by lead source</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --bar: #2a78d6; --good: #006300; --warn-bg: #fff4dc;
+    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948;
+    --f1: #86b6ef; --f2: #5598e7; --f3: #2a78d6; --f4: #184f95; --track: #f0efec;
+  }
+  @media (prefers-color-scheme: dark) {
+    .viz-root {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+      --bar: #3987e5; --good: #0ca30c; --warn-bg: #2e2715;
+      --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #0ca30c; --s7: #9085e9; --s8: #e66767;
+      --f1: #184f95; --f2: #256abf; --f3: #3987e5; --f4: #6da7ec; --track: #262624;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .viz-root { background: var(--page); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; min-height: 100vh; padding: 24px 16px 48px; }
+  main { max-width: 1040px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .card, #content { min-width: 0; }
+  #content { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  header h1 { font-size: 26px; margin: 0 0 4px; }
+  header p { margin: 0; color: var(--ink-2); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .card h2 { font-size: 18px; margin: 0 0 2px; }
+  .card .sub { color: var(--ink-2); margin: 0 0 14px; font-size: 14px; }
+  .hero { border-left: 4px solid var(--bar); }
+  .hero .big { font-size: 18px; font-weight: 600; margin: 6px 0 10px; }
+  .kpis { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 8px; }
+  .kpi .v { font-size: 26px; font-weight: 650; }
+  .kpi .l { color: var(--ink-2); font-size: 13px; }
+  .chart-box { position: relative; height: 340px; }
+  .check { margin-top: 10px; font-size: 14px; color: var(--good); font-weight: 600; }
+  .check.fail { color: #d03b3b; }
+  .note { font-size: 13px; color: var(--ink-2); margin-top: 8px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  /* funnel grid */
+  .funnel { width: 100%; border-collapse: separate; border-spacing: 0 10px; font-size: 13px; }
+  .funnel th { text-align: left; color: var(--ink-2); font-weight: 600; padding: 0 8px 2px 0; white-space: nowrap; }
+  .funnel td { padding: 0 8px 0 0; vertical-align: middle; }
+  .funnel td.src { font-weight: 600; white-space: nowrap; width: 1%; }
+  .cell { min-width: 110px; }
+  .cell .txt { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1.4; }
+  .cell .bar { height: 8px; background: var(--track); border-radius: 4px; margin-top: 3px; overflow: hidden; }
+  .cell .fill { height: 100%; border-radius: 4px; }
+  .cell .txt b { font-weight: 650; }
+  /* tables */
+  .tbl-wrap { overflow-x: auto; }
+  table.data { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  table.data th, table.data td { padding: 7px 10px; border-bottom: 1px solid var(--grid); text-align: right; white-space: nowrap; }
+  table.data th:first-child, table.data td:first-child { text-align: left; }
+  table.data th { color: var(--ink-2); font-weight: 600; }
+  table.data tfoot td { font-weight: 700; border-bottom: 0; }
+  table.data tfoot tr.values td { font-weight: 600; color: var(--ink-2); border-top: 1px solid var(--grid); }
+  .dq-h { font-size: 15px; margin: 16px 0 6px; }
+  table.dq-t td:last-child, table.dq-t th:last-child { text-align: left; white-space: normal; min-width: 220px; }
+  table.dq-t tr.minus td:first-child { padding-left: 22px; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 16px; }
+  details dl { margin: 12px 0 0; }
+  details dt { font-weight: 600; margin-top: 10px; }
+  details dd { margin: 2px 0 0; color: var(--ink-2); }
+  .status { padding: 40px 20px; text-align: center; color: var(--ink-2); }
+  .banner { background: var(--warn-bg); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 640px) {
+    .chart-box { height: 320px; }
+    .funnel .hide-sm { display: none; }
+    header h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<div class="viz-root">
+<main>
+  <header>
+    <h1>Marketing performance by lead source</h1>
+    <p id="meta">Loading the latest numbers…</p>
+  </header>
+
+  <div id="loading" class="card status">Loading the latest numbers from GoHighLevel…</div>
+  <div id="error" class="card status" hidden>
+    <h2>The numbers can't be shown right now</h2>
+    <p id="error-msg"></p>
+    <p><button onclick="location.reload()">Try again</button></p>
+  </div>
+  <div id="stale" class="banner" hidden>⚠️ GoHighLevel could not be reached just now, so these are the last numbers we had.</div>
+
+  <div id="content" hidden>
+    <section class="card hero">
+      <h2>Where to put next month's budget</h2>
+      <p class="big" id="reco"></p>
+      <div class="kpis" id="kpis"></div>
+      <p class="note">There is no ad-spend data, so sources are compared on what each lead brings in: leads, how far they get, and money closed.</p>
+    </section>
+
+    <section class="card">
+      <h2>1. How many leads each source brought</h2>
+      <p class="sub">Number of real leads per source, after removing test and demo records.</p>
+      <div class="chart-box"><canvas id="c-volume" aria-label="Bar chart of leads by source"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2>2. Where those leads are now in the sales pipeline</h2>
+      <p class="sub">Each bar is one source, split by the stage its leads are in today (the 8 stages of the Sales Pipeline, in GoHighLevel's order).</p>
+      <div class="legend" id="stage-legend"></div>
+      <div class="chart-box"><canvas id="c-pipeline" aria-label="Stacked bar chart of pipeline stages by source"></canvas></div>
+      <p class="check" id="check-stages"></p>
+    </section>
+
+    <section class="card">
+      <h2>3. How leads move forward, step by step</h2>
+      <p class="sub">Of the leads that reached one step, how many reached the next. Bars use the same scale for every source; the count behind each % is shown so small numbers don't mislead.</p>
+      <div class="tbl-wrap"><table class="funnel" id="funnel"></table></div>
+      <p class="note">"Booked a call" includes leads who later cancelled or didn't show up. "Had the call" includes leads still in follow-up, lost after the call, or closed.</p>
+    </section>
+
+    <section class="card">
+      <h2>4. Money closed by source</h2>
+      <p class="sub">Revenue from deals in the "Closed" stage, highest first.</p>
+      <div class="chart-box"><canvas id="c-revenue" aria-label="Bar chart of closed revenue by source"></canvas></div>
+      <p class="note" id="revenue-note"></p>
+    </section>
+
+    <section class="card">
+      <h2>Data quality: what we cleaned and why</h2>
+      <p class="sub">The account is shared with other users and contains test and demo records. This is exactly what was left out.</p>
+      <h3 class="dq-h">A. Records left out (not the agency's leads)</h3>
+      <div class="tbl-wrap"><table class="data dq-t" id="dq-removed"></table></div>
+      <h3 class="dq-h">B. Amounts corrected inside the agency's leads</h3>
+      <div class="tbl-wrap"><table class="data dq-t" id="dq-flags"></table></div>
+      <p class="note" id="dq-money"></p>
+      <p class="check" id="check-total"></p>
+    </section>
+
+    <section class="card">
+      <h2>All the numbers in one table</h2>
+      <div class="tbl-wrap"><table class="data" id="table"></table></div>
+      <p class="note" id="table-note"></p>
+    </section>
+
+    <section class="card">
+      <details>
+        <summary>How each number is worked out</summary>
+        <dl>
+          <dt>Which leads are counted</dt>
+          <dd>Opportunities in the "Sales Pipeline" whose contact is tagged <code>dash-project</code> (the agency's leads). Test leads, demo/sandbox records and records added by other users are left out. Duplicate contacts (same email or phone) are counted once.</dd>
+          <dt>Leads</dt>
+          <dd>The number of agency leads that came from each source.</dd>
+          <dt>Pipeline</dt>
+          <dd>How many of each source's leads are in each stage today. The stages always add up to the source's lead total.</dd>
+          <dt>Funnel steps</dt>
+          <dd><b>Opted in</b>: every lead. <b>Booked a call</b>: leads now in Booked call, Cancelled, No Show, Follow Up, Lost or Closed. <b>Had the call</b>: leads now in Follow Up, Lost or Closed. <b>Closed</b>: leads in Closed (they paid). Disqualified, Cancelled, No Show and Lost are exits, not steps forward.</dd>
+          <dt>Conversion %</dt>
+          <dd>Leads that reached a step divided by the leads that reached the step before it. Example: "58% · 11 of 19" means 11 of the 19 leads who booked a call actually had it.</dd>
+          <dt>Revenue</dt>
+          <dd>The sum of deal values in the Closed stage. A deal value more than 10 times the typical deal (<span id="def-threshold"></span>) is treated as a data-entry error: the lead still counts everywhere, but its value is left out of revenue. A closed deal with a $0 value counts as a sale with $0.</dd>
+          <dt>Revenue per lead</dt>
+          <dd>Revenue divided by the number of leads from that source. Used for the budget advice because there is no ad-spend data.</dd>
+          <dt>Freshness</dt>
+          <dd>Numbers are pulled from GoHighLevel when the page opens and reused for up to 15 minutes. Nothing in GoHighLevel is ever changed by this page.</dd>
+        </dl>
+      </details>
+    </section>
+  </div>
+</main>
+</div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const css = (v) => getComputedStyle(document.querySelector(".viz-root")).getPropertyValue(v).trim();
+  const money = (v) => (typeof v === "number" && isFinite(v) ? "$" + Math.round(v).toLocaleString("en-US") : "–");
+  const pct = (r) => (r == null ? "–" : Math.round(r * 100) + "%");
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  function fail(msg) {
+    $("loading").hidden = true; $("content").hidden = true;
+    $("error").hidden = false; $("error-msg").textContent = msg;
+    $("meta").textContent = "";
+  }
+
+  fetch("/api/dashboard", { headers: { Accept: "application/json" } })
+    .then((r) => r.json().catch(() => ({ ok: false })))
+    .then((d) => {
+      if (!d || !d.ok) return fail((d && d.message) || "We couldn't reach GoHighLevel right now. Please try again in a few minutes.");
+      if (typeof Chart === "undefined") return fail("The chart library could not load. Check your internet connection and try again.");
+      render(d);
+    })
+    .catch(() => fail("We couldn't load the numbers. Check your internet connection and try again."));
+
+  function render(d) {
+    $("loading").hidden = true; $("content").hidden = false;
+    if (d.stale) $("stale").hidden = false;
+    const when = new Date(d.lastUpdated);
+    $("meta").textContent = `Agency leads in the "${d.pipeline}" · Last updated ${when.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}` + (d.offline ? " (offline preview)" : "");
+
+    const S = d.sources;
+    const T = d.totals;
+    const dq = d.dataQuality;
+
+    // ---- hero ----
+    $("reco").textContent = d.recommendation;
+    const kpi = (v, l) => `<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+    $("kpis").innerHTML = kpi(T.leads, "agency leads") + kpi(S.length, "lead sources") + kpi(T.closedDeals, "deals closed") + kpi(money(T.revenue), "revenue closed");
+
+    // ---- Chart defaults ----
+    Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", sans-serif';
+    Chart.defaults.font.size = 13;
+    Chart.defaults.color = css("--ink-2");
+    Chart.defaults.borderColor = css("--grid");
+    Chart.defaults.plugins.tooltip.padding = 10;
+    const valueLabels = (fmt) => ({
+      id: "valueLabels",
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart; const meta = chart.getDatasetMeta(0);
+        ctx.save(); ctx.fillStyle = css("--ink"); ctx.font = '600 12px system-ui, -apple-system, "Segoe UI", sans-serif';
+        ctx.textBaseline = "middle";
+        meta.data.forEach((bar, i) => ctx.fillText(fmt(chart.data.datasets[0].data[i], i), bar.x + 6, bar.y));
+        ctx.restore();
+      },
+    });
+    const hBar = (canvas, labels, data, fmt, tooltip) => new Chart(canvas, {
+      type: "bar",
+      data: { labels, datasets: [{ data, backgroundColor: css("--bar"), borderRadius: 4, borderSkipped: "start", barPercentage: 0.7, categoryPercentage: 0.9 }] },
+      options: {
+        indexAxis: "y", maintainAspectRatio: false, layout: { padding: { right: 70 } },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: tooltip } } },
+        scales: { x: { beginAtZero: true, grid: { color: css("--grid") }, border: { color: css("--axis") }, ticks: { callback: (v) => fmt(v) } },
+                  y: { grid: { display: false }, border: { color: css("--axis") }, ticks: { color: css("--ink") } } },
+      },
+      plugins: [valueLabels(fmt)],
+    });
+
+    // ---- 1. volume ----
+    const byLeads = [...S].sort((a, b) => b.leads - a.leads);
+    hBar($("c-volume"), byLeads.map((s) => s.source), byLeads.map((s) => s.leads), (v) => String(v),
+      (c) => ` ${c.raw} leads (${pct(c.raw / T.leads)} of all leads)`);
+
+    // ---- 2. pipeline (stacked) ----
+    const stageColors = ["--s1", "--s2", "--s3", "--s4", "--s5", "--s6", "--s7", "--s8"].map(css);
+    $("stage-legend").innerHTML = d.stages.map((st, i) => `<span><i style="background:${stageColors[i]}"></i>${esc(st)}</span>`).join("");
+    new Chart($("c-pipeline"), {
+      type: "bar",
+      data: {
+        labels: byLeads.map((s) => s.source),
+        datasets: d.stages.map((st, i) => ({
+          label: st, data: byLeads.map((s) => s.stages[st] || 0), backgroundColor: stageColors[i],
+          borderColor: css("--surface"), borderWidth: { left: 0, right: 2, top: 0, bottom: 0 }, borderSkipped: false, barPercentage: 0.7,
+        })),
+      },
+      options: {
+        indexAxis: "y", maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { mode: "index", callbacks: {
+          title: (items) => `${items[0].label}: ${byLeads[items[0].dataIndex].leads} leads`,
+          label: (c) => c.raw ? ` ${c.dataset.label}: ${c.raw}` : null,
+        } } },
+        scales: { x: { stacked: true, beginAtZero: true, grid: { color: css("--grid") }, border: { color: css("--axis") } },
+                  y: { stacked: true, grid: { display: false }, border: { color: css("--axis") }, ticks: { color: css("--ink") } } },
+      },
+    });
+    const okStages = d.checks.stagesAddUpPerSource && d.checks.sourcesAddUpToTotal;
+    $("check-stages").className = "check" + (okStages ? "" : " fail");
+    $("check-stages").textContent = okStages
+      ? `✅ Check passed: for every source the stages add up to its lead total, and all sources add up to ${T.leads}.`
+      : "⚠️ Check failed: the stage counts don't add up to the lead totals.";
+
+    // ---- 3. funnel ----
+    const fColors = ["--f1", "--f2", "--f3", "--f4"].map(css);
+    const maxLeads = Math.max(...S.map((s) => s.leads));
+    const steps = d.funnelSteps;
+    let fh = `<thead><tr><th>Source</th>${steps.map((st, i) => `<th${i === 0 ? "" : ""}>${esc(st)}</th>`).join("")}<th class="hide-sm">Overall</th></tr></thead><tbody>`;
+    for (const s of S) {
+      fh += `<tr><td class="src">${esc(s.source)}</td>`;
+      s.funnel.forEach((n, i) => {
+        const w = maxLeads ? (n / maxLeads) * 100 : 0;
+        const label = i === 0 ? `<b>${n}</b> leads` : `<b>${pct(s.conversion[i - 1].rate)}</b> · ${n} of ${s.funnel[i - 1]}`;
+        fh += `<td><div class="cell" title="${esc(steps[i])}: ${n}"><div class="txt">${label}</div><div class="bar"><div class="fill" style="width:${w}%;background:${fColors[i]}"></div></div></div></td>`;
+      });
+      fh += `<td class="hide-sm" style="white-space:nowrap">${pct(s.closeRate)} closed</td></tr>`;
+    }
+    const tf = [0, 1, 2, 3].map((i) => S.reduce((a, s) => a + s.funnel[i], 0));
+    fh += `</tbody><tfoot><tr><td class="src">Total</td>${tf.map((n, i) => `<td style="padding-left:8px">${i === 0 ? `<b>${n}</b> leads` : `<b>${pct(n / tf[i - 1])}</b> · ${n} of ${tf[i - 1]}`}</td>`).join("")}<td class="hide-sm">${pct(tf[3] / tf[0])} closed</td></tr></tfoot>`;
+    $("funnel").innerHTML = fh;
+
+    // ---- 4. revenue ----
+    hBar($("c-revenue"), S.map((s) => s.source), S.map((s) => s.revenue), money, (c) => {
+      const s = S[c.dataIndex];
+      return [` ${money(s.revenue)} from ${s.closedDeals} closed deal${s.closedDeals === 1 ? "" : "s"}`, ` ${money(s.revenuePerLead)} per lead`];
+    });
+    // ---- data quality ----
+    const rv = dq.removedValue || {};
+    let dr = `<thead><tr><th>Records</th><th>Count</th><th>Deal value</th><th>Why</th></tr></thead><tbody>`;
+    dr += `<tr><td>All records in the Sales Pipeline</td><td>${dq.started}</td><td>${money(dq.startedValue)}</td><td>Everything GoHighLevel returned</td></tr>`;
+    const why = {
+      "Demo / sandbox data": "Tagged demo-data / sandbox: a separate sample import, not real agency leads",
+      "Test lead": "A test entry (named TEST, demo email)",
+      "Not this agency's data (added by another user)": "Typed in by hand by another user of the shared account",
+      "Duplicate contact": "Same person twice (same email or phone); the record furthest in the pipeline is kept",
+      "No contact linked (orphan record)": "No person attached to the deal",
+      "Not in the Sales Pipeline stages": "Stage not part of the Sales Pipeline",
+    };
+    for (const [reason, n] of Object.entries(dq.removed).sort((a, b) => b[1] - a[1]))
+      dr += `<tr class="minus"><td>− ${esc(reason)}</td><td>−${n}</td><td>${rv[reason] ? "−" + money(rv[reason]) : "$0"}</td><td>${esc(why[reason] || "")}</td></tr>`;
+    dr += `</tbody><tfoot><tr><td>= Agency leads kept</td><td>${dq.kept}</td><td>${money(dq.keptValue)}</td><td></td></tr></tfoot>`;
+    $("dq-removed").innerHTML = dr;
+
+    const f = dq.flags;
+    let fr = `<thead><tr><th>Problem found</th><th>Leads</th><th>Amount</th><th>What we did</th></tr></thead><tbody>`;
+    fr += `<tr><td>Deal value too high (above ${money(dq.suspiciousAbove)}, i.e. 10× the typical deal of ${money(dq.typicalDeal)})</td><td>${f.suspiciousValue}</td><td>${money(f.suspiciousAmount)}</td>` +
+      `<td>Leads kept in every count; amounts left out.` + (f.suspiciousClosed == null ? "" : ` ${f.suspiciousClosed} of them were closed deals, so <b>${money(f.suspiciousClosedAmount)}</b> is removed from revenue; the other ${f.suspiciousValue - f.suspiciousClosed} (${money(f.suspiciousAmount - f.suspiciousClosedAmount)}) were never revenue.`) + `</td></tr>`;
+    fr += `<tr><td>Closed deal with a $0 value</td><td>${f.zeroValueWins}</td><td>$0</td><td>Counted as a sale, adds $0 to revenue</td></tr>`;
+    fr += `<tr><td>Status disagrees with the stage</td><td>${f.stageStatusMismatch}</td><td>–</td><td>The stage is used</td></tr>`;
+    if (!dq.removed["Duplicate contact"]) fr += `<tr><td>Duplicate contacts (same email or phone)</td><td>0</td><td>–</td><td>None found</td></tr>`;
+    fr += `</tbody>`;
+    $("dq-flags").innerHTML = fr;
+
+    const stageValueTotal = d.stages.reduce((a, st) => a + S.reduce((b, s) => b + ((s.stageValues || {})[st] || 0), 0), 0);
+    $("dq-money").innerHTML = `Money in short: agency leads carry <b>${money(dq.keptValue)}</b> of deal value. Minus the ${money(f.suspiciousAmount)} of suspicious values leaves <b>${money(stageValueTotal)}</b> (the "Deal value by stage" row in the table below). Of that, only the Closed stage is money received: <b>${money(T.revenue)}</b> revenue.`;
+
+    $("revenue-note").textContent =
+      (f.suspiciousClosed ? `${f.suspiciousClosed} closed deal${f.suspiciousClosed === 1 ? "" : "s"} worth ${money(f.suspiciousClosedAmount)} looked like data-entry errors (above ${money(dq.suspiciousAbove)}) and ${f.suspiciousClosed === 1 ? "is" : "are"} left out of revenue; the leads still count everywhere else. ` : "") +
+      (f.zeroValueWins ? `${f.zeroValueWins} closed deal${f.zeroValueWins === 1 ? " has" : "s have"} a $0 value and count${f.zeroValueWins === 1 ? "s" : ""} as a sale with no revenue.` : "");
+    $("def-threshold").textContent = `typical deal ${money(dq.typicalDeal)}, so above ${money(dq.suspiciousAbove)}`;
+    $("check-total").className = "check" + (d.checks.keptPlusRemovedIsRaw ? "" : " fail");
+    $("check-total").textContent = d.checks.keptPlusRemovedIsRaw ? `✅ Check passed: kept + removed = ${dq.started} records.` : "⚠️ Check failed: kept + removed doesn't match the records pulled.";
+
+    // ---- table ----
+    let th = `<thead><tr><th>Source</th><th>Leads</th>${d.stages.map((st) => `<th>${esc(st)}</th>`).join("")}<th>Booked %</th><th>Had call %</th><th>Close %</th><th>Closed deals</th><th>Revenue</th><th>Per lead</th></tr></thead><tbody>`;
+    for (const s of S) {
+      th += `<tr><td>${esc(s.source)}</td><td>${s.leads}</td>${d.stages.map((st) => `<td>${s.stages[st] || 0}</td>`).join("")}` +
+        `<td>${pct(s.conversion[0].rate)}</td><td>${pct(s.conversion[1].rate)}</td><td>${pct(s.conversion[2].rate)}</td><td>${s.closedDeals}</td><td>${money(s.revenue)}</td><td>${money(s.revenuePerLead)}</td></tr>`;
+    }
+    const stTot = d.stages.map((st) => S.reduce((a, s) => a + (s.stages[st] || 0), 0));
+    th += `</tbody><tfoot><tr><td>Total</td><td>${T.leads}</td>${stTot.map((n) => `<td>${n}</td>`).join("")}<td>${pct(tf[1] / tf[0])}</td><td>${pct(tf[2] / tf[1])}</td><td>${pct(tf[3] / tf[2])}</td><td>${T.closedDeals}</td><td>${money(T.revenue)}</td><td>${money(T.revenue / T.leads)}</td></tr>`;
+    const valTot = d.stages.map((st) => S.reduce((a, s) => a + ((s.stageValues || {})[st] || 0), 0));
+    th += `<tr class="values"><td>Deal value by stage*</td><td>${money(valTot.reduce((a, v) => a + v, 0))}</td>${valTot.map((v) => `<td>${money(v)}</td>`).join("")}<td colspan="6"></td></tr></tfoot>`;
+    $("table").innerHTML = th;
+    $("table-note").textContent = `* The total deal value of the leads in each stage. Only "Closed" is money received; the other stages are possible value, not revenue. Deal values above ${money(dq.suspiciousAbove)} are left out (see Data quality), so a few stages show less than GoHighLevel does.`;
+  }
+})();
+</script>
+</body>
+</html>

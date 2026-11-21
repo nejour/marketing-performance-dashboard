@@ -7,6 +7,12 @@
 // Only GET requests are made. Nothing in GHL is created, updated or deleted.
 // The API key is never printed or written to any file.
 
+
+// 1. **Pipelines:** it downloads the **list** of all 24 pipelines: their names, their stages, and how many opportunities each has. It does **not** download the opportunities inside the other pipelines. This goes to `data/raw/pipelines.json`.
+// 2. **Opportunities:** it downloads **all 238 opportunities in the Sales Pipeline**, page by page, to `data/raw/opportunities.json`.
+// 3. **Contacts:** it downloads the **238 contacts linked to those opportunities**, one per opportunity, to `data/raw/contacts.json`.
+// Then it writes the report, `Steps/data-profile.md`, from those three files.
+
 import fs from "node:fs";
 import path from "node:path";
 
