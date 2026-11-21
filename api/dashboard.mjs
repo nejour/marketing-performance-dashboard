@@ -5,7 +5,12 @@
 import { fetchSalesPipeline } from "../lib/ghl.mjs";
 import { buildDashboard } from "../lib/clean.mjs";
 
-const CACHE_MINUTES = 15;
+// How long the numbers are reused before GoHighLevel is asked again.
+// Set CACHE_MINUTES in .env / Vercel to change it (1 to 1440). Default: 15.
+function cacheMinutes() {
+  const n = Number(process.env.CACHE_MINUTES);
+  return Number.isInteger(n) && n >= 1 && n <= 1440 ? n : 15;
+}
 let cache = null; // { body, at } kept while the function instance is warm
 
 export default async function handler(req, res) {
@@ -22,6 +27,7 @@ export default async function handler(req, res) {
     return res.end(JSON.stringify({ ok: false, message: "The dashboard is not set up yet: the GoHighLevel connection details are missing." }));
   }
 
+  const CACHE_MINUTES = cacheMinutes();
   const fresh = cache && Date.now() - cache.at < CACHE_MINUTES * 60 * 1000;
   if (!fresh) {
     try {

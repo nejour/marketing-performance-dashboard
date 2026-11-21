@@ -47,7 +47,7 @@ Then open http://localhost:3000 in your browser. Stop the server with Ctrl+C.
 npm test
 ```
 
-19 checks: the cleaning rules (agency filter, test/demo removal, $145,000 values, $0 wins, funnel steps, duplicates, source names, a source with no sales), the server function (wrong key, GHL down, nothing private sent to the browser), and the real numbers (238 → 204, $190,750) when `data/raw/` exists. All must say `pass`.
+20 checks: the cleaning rules (agency filter, test/demo removal, $145,000 values, $0 wins, funnel steps, duplicates, source names, a source with no sales), the server function (wrong key, GHL down, nothing private sent to the browser, the CACHE_MINUTES setting), and the real numbers (238 → 204, $190,750) when `data/raw/` exists. All must say `pass`.
 
 Files:
 - `index.html`: the page the owner sees (charts drawn with Chart.js)
@@ -58,3 +58,10 @@ Files:
 - `lib/ghl.mjs`: read-only GHL calls
 - `lib/clean.mjs`: the cleaning rules and calculations
 - `scripts/serve.mjs`: local preview only (not used on Vercel)
+
+## Settings (.env on your computer, Environment Variables on Vercel)
+
+- `GHL_API_KEY`: the GoHighLevel key (required)
+- `GHL_LOCATION_ID`: the GoHighLevel location (required)
+- `CACHE_MINUTES`: how long numbers are reused before GHL is asked again. Optional, 1 to 1440, default 15. On Vercel, redeploy after changing it.
+

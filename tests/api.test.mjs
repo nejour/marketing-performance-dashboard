@@ -94,3 +94,15 @@ test("if GoHighLevel goes down later, the last good numbers are shown and marked
     assert.equal(res.json().totals.leads, 1);
   } finally { Date.now = realNow; }
 });
+
+test("CACHE_MINUTES from the environment sets the cache time; bad values fall back to 15", async () => {
+  mode = "up";
+  for (const [value, seconds] of [["5", 300], ["abc", 900], ["-3", 900], [undefined, 900]]) {
+    if (value === undefined) delete process.env.CACHE_MINUTES; else process.env.CACHE_MINUTES = value;
+    const res = fakeRes();
+    await handler({ method: "GET" }, res);
+    assert.match(res.headers["cache-control"], new RegExp(`s-maxage=${seconds}\\b`), `CACHE_MINUTES=${value}`);
+  }
+  delete process.env.CACHE_MINUTES;
+});
+
