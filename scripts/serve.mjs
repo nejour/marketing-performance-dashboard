@@ -42,6 +42,17 @@ http.createServer(async (req, res) => {
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       return res.end(fs.readFileSync(path.join(ROOT, "index.html")));
     }
+    // Static files the page needs (Chart.js, fonts). Only these two folders are served.
+    const m = url.pathname.match(/^\/(vendor|fonts)\/([A-Za-z0-9._-]+)$/);
+    if (m) {
+      const file = path.join(ROOT, m[1], m[2]);
+      if (fs.existsSync(file)) {
+        const types = { ".js": "application/javascript", ".woff2": "font/woff2", ".txt": "text/plain" };
+        res.setHeader("Content-Type", types[path.extname(file)] || "application/octet-stream");
+        res.setHeader("Cache-Control", "public, max-age=86400");
+        return res.end(fs.readFileSync(file));
+      }
+    }
     res.statusCode = 404; res.end("Not found");
   } catch (e) {
     console.error(e.message);

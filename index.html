@@ -4,42 +4,72 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Marketing performance by lead source</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<link rel="preload" href="/fonts/public-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/public-sans-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script src="/vendor/chart.umd.js" defer></script>
 <style>
+  /* Public Sans (SIL Open Font License), served from this site */
+  @font-face { font-family: "Public Sans"; font-weight: 400; font-display: swap; src: url("/fonts/public-sans-latin-400-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Public Sans"; font-weight: 500 600; font-display: swap; src: url("/fonts/public-sans-latin-600-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Public Sans"; font-weight: 700; font-display: swap; src: url("/fonts/public-sans-latin-700-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Public Sans"; font-weight: 800; font-display: swap; src: url("/fonts/public-sans-latin-800-normal.woff2") format("woff2"); }
   .viz-root {
     color-scheme: light;
-    --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
-    --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --page: #f3f5f8; --surface: #ffffff; --ink: #14213a; --ink-2: #4f5b6d; --muted: #7d8696;
+    --grid: #e3e7ee; --axis: #c5ccd8; --border: #dde2ea;
     --bar: #2a78d6; --good: #006300; --warn-bg: #fff4dc;
+    --up: #0b7a3b; --up-bar: #2f9e5f; --hold-bar: #9aa5b5; --down: #b0461b; --down-bar: #e07a4a;
     --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948;
-    --f1: #86b6ef; --f2: #5598e7; --f3: #2a78d6; --f4: #184f95; --track: #f0efec;
+    --f1: #86b6ef; --f2: #5598e7; --f3: #2a78d6; --f4: #184f95; --track: #edf0f4;
   }
   @media (prefers-color-scheme: dark) {
     .viz-root {
       color-scheme: dark;
-      --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
-      --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+      --page: #0f1522; --surface: #182132; --ink: #eef2f8; --ink-2: #b8c1cf; --muted: #8a94a5;
+      --grid: #263043; --axis: #34405a; --border: #273248;
       --bar: #3987e5; --good: #0ca30c; --warn-bg: #2e2715;
+      --up: #4cc685; --up-bar: #2f9e5f; --hold-bar: #5d6a80; --down: #f0915f; --down-bar: #d95926;
       --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #0ca30c; --s7: #9085e9; --s8: #e66767;
-      --f1: #184f95; --f2: #256abf; --f3: #3987e5; --f4: #6da7ec; --track: #262624;
+      --f1: #184f95; --f2: #256abf; --f3: #3987e5; --f4: #6da7ec; --track: #222c3e;
     }
   }
   * { box-sizing: border-box; }
   body { margin: 0; }
-  .viz-root { background: var(--page); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; min-height: 100vh; padding: 24px 16px 48px; }
+  .viz-root { background: var(--page); color: var(--ink); font: 15px/1.55 "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; min-height: 100vh; padding: 32px 16px 64px; }
+  :focus-visible { outline: 3px solid var(--bar); outline-offset: 2px; }
   main { max-width: 1040px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .card, #content { min-width: 0; }
   #content { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
-  header h1 { font-size: 26px; margin: 0 0 4px; }
-  header p { margin: 0; color: var(--ink-2); }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-  .card h2 { font-size: 18px; margin: 0 0 2px; }
-  .card .sub { color: var(--ink-2); margin: 0 0 14px; font-size: 14px; }
-  .hero { border-left: 4px solid var(--bar); }
-  .hero .big { font-size: 18px; font-weight: 600; margin: 6px 0 10px; }
-  .kpis { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 8px; }
-  .kpi .v { font-size: 26px; font-weight: 650; }
+  header { padding: 4px 0 8px; }
+  header .who { margin: 0 0 6px; color: var(--ink-2); font-weight: 600; font-size: 14px; }
+  header h1 { font-size: clamp(30px, 4.6vw, 46px); line-height: 1.08; letter-spacing: -0.02em; font-weight: 800; margin: 0 0 10px; max-width: 18ch; }
+  header p.meta { margin: 0; color: var(--ink-2); font-size: 14px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; }
+  .card h2 { font-size: 19px; letter-spacing: -0.01em; margin: 0 0 4px; display: flex; align-items: baseline; gap: 10px; }
+  .card h2 .num { flex: none; display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--surface); font-size: 13px; font-weight: 700; transform: translateY(-2px); }
+  .card .sub { color: var(--ink-2); margin: 0 0 16px; font-size: 14px; max-width: 75ch; }
+  /* hero: the budget ladder */
+  .hero { padding: 28px; border: 0; box-shadow: 0 1px 0 var(--border), 0 12px 32px -18px rgba(20,33,58,.35); }
+  .hero .lead-in { font-size: 17px; margin: 0 0 22px; max-width: 70ch; color: var(--ink-2); }
+  .ladder { display: grid; gap: 22px; }
+  .group h3 { margin: 0 0 8px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .group h3 .ico { width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 12px; color: #fff; }
+  .group.up h3 { color: var(--up); } .group.up .ico { background: var(--up-bar); }
+  .group.hold h3 { color: var(--ink-2); } .group.hold .ico { background: var(--hold-bar); }
+  .group.down h3 { color: var(--down); } .group.down .ico { background: var(--down-bar); }
+  .rung { display: grid; grid-template-columns: minmax(120px, 170px) 1fr 200px; align-items: center; gap: 14px; padding: 7px 0; border-top: 1px solid var(--grid); }
+  .rung:first-of-type { border-top: 0; }
+  .rung .name { font-weight: 600; }
+  .rung .track { height: 12px; background: var(--track); border-radius: 6px; overflow: hidden; }
+  .rung .fill { height: 100%; border-radius: 6px; }
+  .up .fill { background: var(--up-bar); } .hold .fill { background: var(--hold-bar); } .down .fill { background: var(--down-bar); }
+  .rung .val { text-align: right; white-space: nowrap; }
+  .rung .val b { font-size: 17px; }
+  .rung .val small { display: block; color: var(--ink-2); font-size: 12.5px; }
+  .kpis { display: flex; flex-wrap: wrap; gap: 12px 36px; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--grid); }
+  .kpi .v { font-size: 22px; font-weight: 700; }
   .kpi .l { color: var(--ink-2); font-size: 13px; }
+  .hero .note { margin-top: 14px; }
   .chart-box { position: relative; height: 340px; }
   .check { margin-top: 10px; font-size: 14px; color: var(--good); font-weight: 600; }
   .check.fail { color: #d03b3b; }
@@ -49,7 +79,7 @@
   .legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
   /* funnel grid */
   .funnel { width: 100%; border-collapse: separate; border-spacing: 0 10px; font-size: 13px; }
-  .funnel th { text-align: left; color: var(--ink-2); font-weight: 600; padding: 0 8px 2px 0; white-space: nowrap; }
+  .funnel th { text-align: left; font-size: 13px; color: var(--ink-2); font-weight: 600; padding: 0 8px 2px 0; white-space: nowrap; }
   .funnel td { padding: 0 8px 0 0; vertical-align: middle; }
   .funnel td.src { font-weight: 600; white-space: nowrap; width: 1%; }
   .cell { min-width: 110px; }
@@ -63,6 +93,8 @@
   table.data th, table.data td { padding: 7px 10px; border-bottom: 1px solid var(--grid); text-align: right; white-space: nowrap; }
   table.data th:first-child, table.data td:first-child { text-align: left; }
   table.data th { color: var(--ink-2); font-weight: 600; }
+  table.data th:first-child, table.data td:first-child { position: sticky; left: 0; background: var(--surface); z-index: 1; }
+  table.data tbody tr:hover td { background: var(--track); }
   table.data tfoot td { font-weight: 700; border-bottom: 0; }
   table.data tfoot tr.values td { font-weight: 600; color: var(--ink-2); border-top: 1px solid var(--grid); }
   .dq-h { font-size: 15px; margin: 16px 0 6px; }
@@ -75,10 +107,22 @@
   .status { padding: 40px 20px; text-align: center; color: var(--ink-2); }
   .banner { background: var(--warn-bg); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
   [hidden] { display: none !important; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   @media (max-width: 640px) {
     .chart-box { height: 320px; }
+    /* funnel: one block per source, the 4 steps in a 2x2 grid */
+    .tbl-wrap:has(.funnel) { overflow: visible; }
+    .funnel, .funnel tbody, .funnel tfoot { display: block; }
+    .funnel thead { display: none; }
+    .funnel tr { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; padding: 12px 0; border-top: 1px solid var(--grid); }
+    .funnel td { padding: 0; }
+    .funnel td.src { grid-column: 1 / -1; width: auto; font-size: 15px; }
+    .funnel td[data-step]::before { content: attr(data-step); display: block; font-size: 12px; color: var(--ink-2); margin-bottom: 2px; }
+    .funnel .cell { min-width: 0; }
+    .card, .hero { padding: 18px; }
+    .rung { grid-template-columns: 1fr auto; }
+    .rung .track { grid-column: 1 / -1; grid-row: 2; }
     .funnel .hide-sm { display: none; }
-    header h1 { font-size: 22px; }
   }
 </style>
 </head>
@@ -86,8 +130,9 @@
 <div class="viz-root">
 <main>
   <header>
-    <h1>Marketing performance by lead source</h1>
-    <p id="meta">Loading the latest numbers…</p>
+    <p class="who">Marketing performance, by lead source</p>
+    <h1>Where should next month's budget go?</h1>
+    <p class="meta" id="meta">Loading the latest numbers…</p>
   </header>
 
   <div id="loading" class="card status">Loading the latest numbers from GoHighLevel…</div>
@@ -99,21 +144,22 @@
   <div id="stale" class="banner" hidden>⚠️ GoHighLevel could not be reached just now, so these are the last numbers we had.</div>
 
   <div id="content" hidden>
-    <section class="card hero">
-      <h2>Where to put next month's budget</h2>
-      <p class="big" id="reco"></p>
+    <section class="card hero" aria-labelledby="hero-h">
+      <h2 id="hero-h" class="visually-hidden">Budget advice</h2>
+      <p class="lead-in" id="reco"></p>
+      <div class="ladder" id="ladder"></div>
       <div class="kpis" id="kpis"></div>
-      <p class="note">There is no ad-spend data, so sources are compared on what each lead brings in: leads, how far they get, and money closed.</p>
+      <p class="note">Sources are ranked by revenue closed per lead. There is no ad-spend data, so this compares what each lead brings in, not what it cost.</p>
     </section>
 
     <section class="card">
-      <h2>1. How many leads each source brought</h2>
+      <h2><span class="num">1</span>How many leads each source brought</h2>
       <p class="sub">Number of real leads per source, after removing test and demo records.</p>
       <div class="chart-box"><canvas id="c-volume" aria-label="Bar chart of leads by source"></canvas></div>
     </section>
 
     <section class="card">
-      <h2>2. Where those leads are now in the sales pipeline</h2>
+      <h2><span class="num">2</span>Where those leads are now in the sales pipeline</h2>
       <p class="sub">Each bar is one source, split by the stage its leads are in today (the 8 stages of the Sales Pipeline, in GoHighLevel's order).</p>
       <div class="legend" id="stage-legend"></div>
       <div class="chart-box"><canvas id="c-pipeline" aria-label="Stacked bar chart of pipeline stages by source"></canvas></div>
@@ -121,14 +167,14 @@
     </section>
 
     <section class="card">
-      <h2>3. How leads move forward, step by step</h2>
+      <h2><span class="num">3</span>How leads move forward, step by step</h2>
       <p class="sub">Of the leads that reached one step, how many reached the next. Bars use the same scale for every source; the count behind each % is shown so small numbers don't mislead.</p>
       <div class="tbl-wrap"><table class="funnel" id="funnel"></table></div>
       <p class="note">"Booked a call" includes leads who later cancelled or didn't show up. "Had the call" includes leads still in follow-up, lost after the call, or closed.</p>
     </section>
 
     <section class="card">
-      <h2>4. Money closed by source</h2>
+      <h2><span class="num">4</span>Money closed by source</h2>
       <p class="sub">Revenue from deals in the "Closed" stage, highest first.</p>
       <div class="chart-box"><canvas id="c-revenue" aria-label="Bar chart of closed revenue by source"></canvas></div>
       <p class="note" id="revenue-note"></p>
@@ -164,7 +210,7 @@
           <dt>Funnel steps</dt>
           <dd><b>Opted in</b>: every lead. <b>Booked a call</b>: leads now in Booked call, Cancelled, No Show, Follow Up, Lost or Closed. <b>Had the call</b>: leads now in Follow Up, Lost or Closed. <b>Closed</b>: leads in Closed (they paid). Disqualified, Cancelled, No Show and Lost are exits, not steps forward.</dd>
           <dt>Conversion %</dt>
-          <dd>Leads that reached a step divided by the leads that reached the step before it. Example: "58% · 11 of 19" means 11 of the 19 leads who booked a call actually had it.</dd>
+          <dd>Leads that reached a step divided by the leads that reached the step before it. Example: "58% (11 of 19)" means 11 of the 19 leads who booked a call actually had it.</dd>
           <dt>Revenue</dt>
           <dd>The sum of deal values in the Closed stage. A deal value more than 10 times the typical deal (<span id="def-threshold"></span>) is treated as a data-entry error: the lead still counts everywhere, but its value is left out of revenue. A closed deal with a $0 value counts as a sale with $0.</dd>
           <dt>Revenue per lead</dt>
@@ -179,7 +225,7 @@
 </div>
 
 <script>
-(function () {
+document.addEventListener("DOMContentLoaded", function () {
   const $ = (id) => document.getElementById(id);
   const css = (v) => getComputedStyle(document.querySelector(".viz-root")).getPropertyValue(v).trim();
   const money = (v) => (typeof v === "number" && isFinite(v) ? "$" + Math.round(v).toLocaleString("en-US") : "–");
@@ -205,7 +251,7 @@
     $("loading").hidden = true; $("content").hidden = false;
     if (d.stale) $("stale").hidden = false;
     const when = new Date(d.lastUpdated);
-    $("meta").textContent = `Agency leads in the "${d.pipeline}" · Last updated ${when.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}` + (d.offline ? " (offline preview)" : "");
+    $("meta").textContent = `Agency leads from the ${d.pipeline}, updated ${when.toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}.` + (d.offline ? " Offline preview." : "");
 
     const S = d.sources;
     const T = d.totals;
@@ -213,11 +259,23 @@
 
     // ---- hero ----
     $("reco").textContent = d.recommendation;
+    // budget ladder: all sources ranked by revenue per lead, top 2 / middle / bottom 2
+    const ranked = [...S].sort((a, b) => b.revenuePerLead - a.revenuePerLead);
+    const maxRpl = Math.max(...ranked.map((s) => s.revenuePerLead), 1);
+    const groups = ranked.length >= 5
+      ? [["up", "▲", "Put more in", ranked.slice(0, 2)], ["hold", "●", "Keep as is", ranked.slice(2, -2)], ["down", "▼", "Review", ranked.slice(-2)]]
+      : [["hold", "●", "All sources", ranked]];
+    $("ladder").innerHTML = groups.map(([cls, ico, title, list]) =>
+      `<div class="group ${cls}"><h3><span class="ico" aria-hidden="true">${ico}</span>${title}</h3>` +
+      list.map((s) => `<div class="rung"><span class="name">${esc(s.source)}</span>` +
+        `<div class="track" aria-hidden="true"><div class="fill" style="width:${(s.revenuePerLead / maxRpl) * 100}%"></div></div>` +
+        `<span class="val"><b>${money(s.revenuePerLead)}</b> per lead<small>${s.closedDeals} sale${s.closedDeals === 1 ? "" : "s"} from ${s.leads} leads, ${money(s.revenue)}</small></span></div>`).join("") +
+      `</div>`).join("");
     const kpi = (v, l) => `<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`;
     $("kpis").innerHTML = kpi(T.leads, "agency leads") + kpi(S.length, "lead sources") + kpi(T.closedDeals, "deals closed") + kpi(money(T.revenue), "revenue closed");
 
     // ---- Chart defaults ----
-    Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", sans-serif';
+    Chart.defaults.font.family = '"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif';
     Chart.defaults.font.size = 13;
     Chart.defaults.color = css("--ink-2");
     Chart.defaults.borderColor = css("--grid");
@@ -226,7 +284,7 @@
       id: "valueLabels",
       afterDatasetsDraw(chart) {
         const { ctx } = chart; const meta = chart.getDatasetMeta(0);
-        ctx.save(); ctx.fillStyle = css("--ink"); ctx.font = '600 12px system-ui, -apple-system, "Segoe UI", sans-serif';
+        ctx.save(); ctx.fillStyle = css("--ink"); ctx.font = '600 12px "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif';
         ctx.textBaseline = "middle";
         meta.data.forEach((bar, i) => ctx.fillText(fmt(chart.data.datasets[0].data[i], i), bar.x + 6, bar.y));
         ctx.restore();
@@ -286,13 +344,13 @@
       fh += `<tr><td class="src">${esc(s.source)}</td>`;
       s.funnel.forEach((n, i) => {
         const w = maxLeads ? (n / maxLeads) * 100 : 0;
-        const label = i === 0 ? `<b>${n}</b> leads` : `<b>${pct(s.conversion[i - 1].rate)}</b> · ${n} of ${s.funnel[i - 1]}`;
-        fh += `<td><div class="cell" title="${esc(steps[i])}: ${n}"><div class="txt">${label}</div><div class="bar"><div class="fill" style="width:${w}%;background:${fColors[i]}"></div></div></div></td>`;
+        const label = i === 0 ? `<b>${n}</b> leads` : `<b>${pct(s.conversion[i - 1].rate)}</b> (${n} of ${s.funnel[i - 1]})`;
+        fh += `<td data-step="${esc(steps[i])}"><div class="cell" title="${esc(steps[i])}: ${n}"><div class="txt">${label}</div><div class="bar"><div class="fill" style="width:${w}%;background:${fColors[i]}"></div></div></div></td>`;
       });
       fh += `<td class="hide-sm" style="white-space:nowrap">${pct(s.closeRate)} closed</td></tr>`;
     }
     const tf = [0, 1, 2, 3].map((i) => S.reduce((a, s) => a + s.funnel[i], 0));
-    fh += `</tbody><tfoot><tr><td class="src">Total</td>${tf.map((n, i) => `<td style="padding-left:8px">${i === 0 ? `<b>${n}</b> leads` : `<b>${pct(n / tf[i - 1])}</b> · ${n} of ${tf[i - 1]}`}</td>`).join("")}<td class="hide-sm">${pct(tf[3] / tf[0])} closed</td></tr></tfoot>`;
+    fh += `</tbody><tfoot><tr><td class="src">Total</td>${tf.map((n, i) => `<td data-step="${esc(steps[i])}">${i === 0 ? `<b>${n}</b> leads` : `<b>${pct(n / tf[i - 1])}</b> (${n} of ${tf[i - 1]})`}</td>`).join("")}<td class="hide-sm">${pct(tf[3] / tf[0])} closed</td></tr></tfoot>`;
     $("funnel").innerHTML = fh;
 
     // ---- 4. revenue ----
@@ -350,7 +408,7 @@
     $("table").innerHTML = th;
     $("table-note").textContent = `* The total deal value of the leads in each stage. Only "Closed" is money received; the other stages are possible value, not revenue. Deal values above ${money(dq.suspiciousAbove)} are left out (see Data quality), so a few stages show less than GoHighLevel does.`;
   }
-})();
+});
 </script>
 </body>
 </html>

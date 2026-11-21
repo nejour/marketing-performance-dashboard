@@ -41,8 +41,19 @@ node scripts/serve.mjs --offline
 
 Then open http://localhost:3000 in your browser. Stop the server with Ctrl+C.
 
+## Run the tests (Step 9)
+
+```powershell
+npm test
+```
+
+19 checks: the cleaning rules (agency filter, test/demo removal, $145,000 values, $0 wins, funnel steps, duplicates, source names, a source with no sales), the server function (wrong key, GHL down, nothing private sent to the browser), and the real numbers (238 → 204, $190,750) when `data/raw/` exists. All must say `pass`.
+
 Files:
 - `index.html`: the page the owner sees (charts drawn with Chart.js)
+- `vendor/chart.umd.js`: Chart.js 4.4.1 (MIT licence), served from the site so no outside website is needed
+- `fonts/`: the Public Sans font (SIL Open Font Licence), same reason
+- `tests/`: the automated checks
 - `api/dashboard.mjs`: the server function (holds the key, returns only totals). On Vercel it runs at `/api/dashboard`
 - `lib/ghl.mjs`: read-only GHL calls
 - `lib/clean.mjs`: the cleaning rules and calculations

@@ -5,6 +5,7 @@
     "node": "22.x"
   },
   "scripts": {
-    "dev": "node --use-system-ca scripts/serve.mjs"
+    "dev": "node --use-system-ca scripts/serve.mjs",
+    "test": "node --test"
   }
 }
